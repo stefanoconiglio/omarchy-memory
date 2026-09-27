@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.stefanoconiglio.memory",
+  "name": "Memory",
+  "version": "1.0.0",
+  "author": "Stefano Coniglio",
+  "license": "MIT",
+  "description": "RAM and swap in use, measured the way systemd-oomd measures them, turning urgent before oomd starts killing.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Memory",
+    "description": "RAM and swap in use; click for btop",
+    "category": "System",
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "schema": [
+      {
+        "key": "warnPercent",
+        "type": "integer",
+        "label": "Warn at (%)",
+        "min": 50,
+        "max": 100,
+        "step": 5,
+        "defaultValue": 85,
+        "description": "Turn the widget urgent once RAM or swap use reaches this share. systemd-oomd kills once both pass 90%."
+      },
+      {
+        "key": "showSwap",
+        "type": "enum",
+        "label": "Show swap",
+        "options": [
+          "On",
+          "Off"
+        ],
+        "defaultValue": "On"
+      }
+    ]
+  }
+}
