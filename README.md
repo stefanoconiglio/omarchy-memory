@@ -17,11 +17,12 @@ The widget shows two numbers:
 - `󰓡` swap in use: `SwapTotal − SwapFree`.
 
 Each number turns orange once it reaches 85% and red at 90%, where oomd
-starts killing; a soft outline groups the two. The colours follow the theme
-(`Attention.qml`, `Attention.js`): its own orange and red when it has real
-ones, a standard orange and red where it doesn't (some themes give those
-names to green, grey or blue), either one darkened or lightened just enough to
-read at 3:1 against the bar. Hover for the amounts in GB; click to open btop.
+starts killing; a soft outline groups the two, in bold title-size numbers.
+The colours (`Attention.qml`, `Attention.js`): the theme's own orange when it
+has a real one (some themes give the name to green, grey or blue), a standard
+orange otherwise, and always a standard red; either one darkened or lightened
+just enough to read at 3:1 against the bar. Hover for the amounts in GB;
+click to open btop.
 The numbers update every 3 seconds.
 
 ## Install

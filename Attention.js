@@ -1,11 +1,13 @@
 // Colours for a bar face drawn as an outline on the theme's own bar.
 //
 // Normal values use the bar's text colour. Values that need attention use
-// orange or red: the theme's own (colors.toml) when it really is orange or red,
-// a standard one otherwise. Several themes name other colours so: green on
-// Hackerman, greys on Vantablack and White, blue and magenta on Lupine, a red
-// for orange on Matte Black. Either is then darkened (light bar) or lightened
-// (dark bar) as little as needed to reach minContrast on the bar's background.
+// orange or red. Red is always the standard one: some themes' reds are muted
+// (Rosé Pine's is a rose) and read as a tint, not an alarm. Orange is the
+// theme's own (colors.toml) when it really is orange, the standard one
+// otherwise: several themes give the name to other colours (green on
+// Hackerman, greys on Vantablack and White, blue on Lupine, a red on Matte
+// Black). Either is then darkened (light bar) or lightened (dark bar) as little
+// as needed to reach minContrast on the bar's background.
 //
 // Colours here are [r, g, b] arrays in 0..1, so the file runs under node too.
 
@@ -48,12 +50,12 @@ function looksLike(kind, rgb) {
   var hs = hueSat(rgb)
   if (hs.sat < 0.35) return false
   if (kind === "red") return hs.hue >= 340 || hs.hue <= 12
-  return hs.hue > 12 && hs.hue <= 45
+  return hs.hue >= 18 && hs.hue <= 45
 }
 
 // "orange" or "red" for this theme on this background.
 function attention(kind, palette, background) {
-  var own = palette ? palette[kind] : null
+  var own = kind === "orange" && palette ? palette.orange : null
   return readable(looksLike(kind, own) ? own : standard[kind], background)
 }
 

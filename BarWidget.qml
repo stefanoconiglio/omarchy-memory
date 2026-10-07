@@ -70,8 +70,9 @@ BarWidget {
     if (!memProc.running) memProc.running = true
   }
 
-  implicitWidth: vertical ? ramButton.implicitWidth : outlineBox.width + Style.space(10)
-  implicitHeight: vertical ? ramButton.implicitHeight : faceRow.implicitHeight
+  implicitWidth: vertical ? iconButton.implicitWidth : outlineBox.width + Style.space(10)
+  implicitHeight: vertical ? iconButton.implicitHeight : barSize
+
 
   // procfs files report a size of zero and never fire inotify, so poll with
   // cat rather than a FileView.
@@ -99,13 +100,12 @@ BarWidget {
     visible: !root.vertical && root.memTotal > 0
     anchors.centerIn: parent
     width: {
-      var w = Math.ceil(faceRow.implicitWidth) + Style.space(10)
+      var w = Math.ceil(numbers.width) + Style.space(8)
       return w % 2 === 0 ? w : w + 1
     }
     height: {
-      var size = root.bar ? root.bar.barSize : Style.bar.sizeHorizontal
-      var h = size - Style.space(6)
-      return (size - h) % 2 === 0 ? h : h - 1
+      var h = root.barSize - Style.space(6)
+      return (root.barSize - h) % 2 === 0 ? h : h - 1
     }
     radius: height / 2
     color: "transparent"
@@ -113,30 +113,77 @@ BarWidget {
     border.color: attention.outline
   }
 
-  Row {
-    id: faceRow
+  // On a vertical bar, the icon alone.
+  WidgetButton {
+    id: iconButton
+    anchors.fill: parent
+    bar: root.bar
+    text: root.vertical && root.memTotal > 0 ? "󰍛" : ""
+    foreground: root.levelColor(root.worstPercent)
+    tooltipText: root.tooltip
+    horizontalMargin: 8.75
+    verticalPadding: 8.75
+    onPressed: function(b) { root.openBtop(b) }
+  }
+
+  // The numbers in the outlined widgets' type (bold, title size), drawn by
+  // hand since WidgetButton has no bold: so the item registers as a click
+  // target and reports tooltipHovered itself, as WidgetButton would.
+  Item {
+    id: numbers
+    visible: !root.vertical && root.memTotal > 0
     anchors.centerIn: parent
+    width: numbersRow.width + Style.space(8)
+    height: root.barSize
+    readonly property bool tooltipHovered: numbersMouse.containsMouse
 
-    WidgetButton {
-      id: ramButton
-      bar: root.bar
-      text: root.memTotal <= 0 ? "" : root.vertical ? "󰍛" : "󰍛 " + root.memPercent + "%"
-      foreground: root.levelColor(root.vertical || !root.showSwap ? root.worstPercent : root.memPercent)
-      tooltipText: root.tooltip
-      horizontalMargin: root.vertical ? 8.75 : 4
-      verticalPadding: 8.75
-      onPressed: function(b) { root.openBtop(b) }
+    Component.onCompleted: if (root.bar && root.bar.registerClickTarget) root.bar.registerClickTarget(numbers)
+    Component.onDestruction: if (root.bar && root.bar.unregisterClickTarget) root.bar.unregisterClickTarget(numbers)
+
+    FontMetrics { id: numberMetrics; font: ramText.font }
+    // Digits set the baseline, so the numbers sit centred in the bar.
+    TextMetrics { id: digitInk; font: ramText.font; text: "88" }
+    // Room for two digits, so 9% turning into 10% doesn't move the bar.
+    TextMetrics { id: slotInk; font: ramText.font; text: "󰍛 88%" }
+
+    Row {
+      id: numbersRow
+      x: Style.space(4)
+      y: Math.round((numbers.height - digitInk.tightBoundingRect.height) / 2
+                    - digitInk.tightBoundingRect.y - numberMetrics.ascent)
+      spacing: Style.space(10)
+
+      BarNumber {
+        id: ramText
+        text: "󰍛 " + root.memPercent + "%"
+        color: root.levelColor(root.showSwap ? root.memPercent : root.worstPercent)
+      }
+      BarNumber {
+        visible: root.showSwap
+        text: "󰓡 " + root.swapPercent + "%"
+        color: root.levelColor(root.swapPercent)
+      }
     }
 
-    WidgetButton {
-      id: swapButton
-      bar: root.bar
-      text: root.memTotal <= 0 || root.vertical || !root.showSwap ? "" : "󰓡 " + root.swapPercent + "%"
-      foreground: root.levelColor(root.swapPercent)
-      tooltipText: root.tooltip
-      horizontalMargin: 4
-      verticalPadding: 8.75
-      onPressed: function(b) { root.openBtop(b) }
+    MouseArea {
+      id: numbersMouse
+      anchors.fill: parent
+      hoverEnabled: true
+      cursorShape: Qt.PointingHandCursor
+      onEntered: if (root.bar) root.bar.showTooltip(numbers, root.tooltip)
+      onExited: if (root.bar) root.bar.hideTooltip(numbers)
+      onClicked: function(mouse) {
+        if (root.bar) root.bar.hideTooltip(numbers)
+        root.openBtop(mouse.button)
+      }
     }
+  }
+
+  component BarNumber: Text {
+    width: Math.max(implicitWidth, slotInk.width)
+    textFormat: Text.PlainText
+    font.family: root.bar ? root.bar.fontFamily : Style.font.family
+    font.pixelSize: Style.font.title
+    font.bold: true
   }
 }
