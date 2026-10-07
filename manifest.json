@@ -5,7 +5,7 @@
   "version": "1.0.0",
   "author": "Stefano Coniglio",
   "license": "MIT",
-  "description": "RAM and swap in use, measured the way systemd-oomd measures them, turning urgent before oomd starts killing.",
+  "description": "RAM and swap in use, measured the way systemd-oomd measures them, turning orange and then red before oomd starts killing.",
   "kinds": [
     "bar-widget"
   ],
@@ -27,7 +27,7 @@
         "max": 100,
         "step": 5,
         "defaultValue": 85,
-        "description": "Turn the widget urgent once RAM or swap use reaches this share. systemd-oomd kills once both pass 90%."
+        "description": "Turn a number orange once RAM or swap use reaches this share; it turns red at 90%, where systemd-oomd kills once both pass."
       },
       {
         "key": "showSwap",

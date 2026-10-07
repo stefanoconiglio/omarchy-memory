@@ -6,8 +6,10 @@ import qs.Ui
 
 // RAM and swap in use, read from /proc/meminfo the way systemd-oomd reads it:
 // used memory is MemTotal - MemAvailable, used swap is SwapTotal - SwapFree.
-// oomd kills the unit holding the most swap once both pass 90%, so the label
-// turns urgent as soon as either one reaches warnPercent.
+// oomd kills the unit holding the most swap once both pass 90%, so each
+// number turns orange at warnPercent and red at 90%, inside a soft outline
+// that groups the two (Attention.qml: the theme's own orange and red when it
+// has them, always readable on its bar).
 //
 // Left click opens btop.
 BarWidget {
@@ -24,12 +26,19 @@ BarWidget {
   readonly property bool showSwap: String(setting("showSwap", "On")) !== "Off" && swapTotal > 0
   readonly property int memPercent: memTotal > 0 ? Math.round(100 * memUsed / memTotal) : 0
   readonly property int swapPercent: swapTotal > 0 ? Math.round(100 * swapUsed / swapTotal) : 0
-  readonly property bool warning: memPercent >= warnPercent
-    || (swapTotal > 0 && swapPercent >= warnPercent)
+  readonly property int redPercent: 90
 
-  readonly property string label: memTotal <= 0 ? ""
-    : vertical ? "󰍛"
-    : "󰍛 " + memPercent + "%" + (showSwap ? "  󰓡 " + swapPercent + "%" : "")
+  Attention { id: attention; bar: root.bar }
+
+  function levelColor(percent) {
+    if (percent >= redPercent) return attention.red
+    if (percent >= warnPercent) return attention.orange
+    return attention.normal
+  }
+
+  // On a vertical bar the icon alone, and with swap hidden the RAM number, in
+  // the colour of the fuller of the two: swap still counts.
+  readonly property int worstPercent: Math.max(memPercent, swapTotal > 0 ? swapPercent : 0)
 
   readonly property string tooltip: memTotal <= 0 ? ""
     : "RAM " + gb(memUsed) + " of " + gb(memTotal) + " GB (" + memPercent + "%)\n"
@@ -61,8 +70,8 @@ BarWidget {
     if (!memProc.running) memProc.running = true
   }
 
-  implicitWidth: button.implicitWidth
-  implicitHeight: button.implicitHeight
+  implicitWidth: vertical ? ramButton.implicitWidth : outlineBox.width + Style.space(10)
+  implicitHeight: vertical ? ramButton.implicitHeight : faceRow.implicitHeight
 
   // procfs files report a size of zero and never fire inotify, so poll with
   // cat rather than a FileView.
@@ -80,18 +89,54 @@ BarWidget {
     onTriggered: root.refresh()
   }
 
-  WidgetButton {
-    id: button
-    anchors.fill: parent
-    bar: root.bar
-    text: root.label
-    active: root.warning
-    tooltipText: root.tooltip
-    horizontalMargin: 8.75
-    verticalPadding: 8.75
+  function openBtop(b) {
+    if (root.bar && b === Qt.LeftButton) root.bar.run("omarchy-launch-or-focus-tui btop")
+  }
 
-    onPressed: function(b) {
-      if (root.bar && b === Qt.LeftButton) root.bar.run("omarchy-launch-or-focus-tui btop")
+  // Even width and a height of the bar's parity, so centring leaves no half pixel.
+  Rectangle {
+    id: outlineBox
+    visible: !root.vertical && root.memTotal > 0
+    anchors.centerIn: parent
+    width: {
+      var w = Math.ceil(faceRow.implicitWidth) + Style.space(10)
+      return w % 2 === 0 ? w : w + 1
+    }
+    height: {
+      var size = root.bar ? root.bar.barSize : Style.bar.sizeHorizontal
+      var h = size - Style.space(6)
+      return (size - h) % 2 === 0 ? h : h - 1
+    }
+    radius: height / 2
+    color: "transparent"
+    border.width: Math.max(1, Math.round(Style.space(1.5)))
+    border.color: attention.outline
+  }
+
+  Row {
+    id: faceRow
+    anchors.centerIn: parent
+
+    WidgetButton {
+      id: ramButton
+      bar: root.bar
+      text: root.memTotal <= 0 ? "" : root.vertical ? "󰍛" : "󰍛 " + root.memPercent + "%"
+      foreground: root.levelColor(root.vertical || !root.showSwap ? root.worstPercent : root.memPercent)
+      tooltipText: root.tooltip
+      horizontalMargin: root.vertical ? 8.75 : 4
+      verticalPadding: 8.75
+      onPressed: function(b) { root.openBtop(b) }
+    }
+
+    WidgetButton {
+      id: swapButton
+      bar: root.bar
+      text: root.memTotal <= 0 || root.vertical || !root.showSwap ? "" : "󰓡 " + root.swapPercent + "%"
+      foreground: root.levelColor(root.swapPercent)
+      tooltipText: root.tooltip
+      horizontalMargin: 4
+      verticalPadding: 8.75
+      onPressed: function(b) { root.openBtop(b) }
     }
   }
 }

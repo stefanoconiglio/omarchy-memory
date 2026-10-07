@@ -16,8 +16,13 @@ The widget shows two numbers:
   oomd compares against its limit.
 - `󰓡` swap in use: `SwapTotal − SwapFree`.
 
-Both turn the theme's urgent colour once either one reaches 85%. Hover for the
-amounts in GB; click to open btop. The numbers update every 3 seconds.
+Each number turns orange once it reaches 85% and red at 90%, where oomd
+starts killing; a soft outline groups the two. The colours follow the theme
+(`Attention.qml`, `Attention.js`): its own orange and red when it has real
+ones, a standard orange and red where it doesn't (some themes give those
+names to green, grey or blue), either one darkened or lightened just enough to
+read at 3:1 against the bar. Hover for the amounts in GB; click to open btop.
+The numbers update every 3 seconds.
 
 ## Install
 
@@ -37,8 +42,8 @@ Requires Omarchy Quattro (the Quickshell-based `omarchy-shell`).
 
 | Setting       | Default | Meaning                                                    |
 |---------------|---------|------------------------------------------------------------|
-| `warnPercent` | `85`    | RAM or swap share at which the widget turns urgent         |
-| `showSwap`    | `On`    | `Off` shows RAM only; swap still counts toward the warning |
+| `warnPercent` | `85`    | RAM or swap share at which its number turns orange         |
+| `showSwap`    | `On`    | `Off` shows RAM only; swap still counts toward its colour  |
 
 ```bash
 omarchy bar set io.github.stefanoconiglio.memory warnPercent 80 --json
