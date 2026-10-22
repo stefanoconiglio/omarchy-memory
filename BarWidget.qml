@@ -11,7 +11,8 @@ import qs.Ui
 // that groups the two (Attention.qml: the theme's own orange and red when it
 // has them, always readable on its bar).
 //
-// Left click opens btop.
+// Left click opens btop; right click switches the numbers between percentages
+// and the GB in use, saved as the units setting in shell.json.
 BarWidget {
   id: root
   moduleName: "io.github.stefanoconiglio.memory"
@@ -24,6 +25,7 @@ BarWidget {
 
   readonly property int warnPercent: Number(setting("warnPercent", 85))
   readonly property bool showSwap: String(setting("showSwap", "On")) !== "Off" && swapTotal > 0
+  readonly property bool showGb: String(setting("units", "Percent")) === "GB"
   readonly property int memPercent: memTotal > 0 ? Math.round(100 * memUsed / memTotal) : 0
   readonly property int swapPercent: swapTotal > 0 ? Math.round(100 * swapUsed / swapTotal) : 0
   readonly property int redPercent: 90
@@ -46,10 +48,15 @@ BarWidget {
         ? "Swap " + gb(swapUsed) + " of " + gb(swapTotal) + " GB (" + swapPercent + "%)\n"
         : "No swap\n")
       + "systemd-oomd kills once both pass 90%\n"
-      + "Click to open btop"
+      + "Left: btop · Right: " + (showGb ? "percentages" : "GB")
 
   function gb(kb) {
     return (kb / 1048576).toFixed(1)
+  }
+
+  // The number in the bar: the share, or the GB in use.
+  function label(icon, kb, percent) {
+    return icon + " " + (showGb ? gb(kb) + "G" : percent + "%")
   }
 
   function update(text) {
@@ -92,6 +99,12 @@ BarWidget {
 
   function openBtop(b) {
     if (root.bar && b === Qt.LeftButton) root.bar.run("omarchy-launch-or-focus-tui btop")
+  }
+
+  // Saved into the widget's entry in shell.json, so it survives a restart.
+  function toggleUnits() {
+    root.settings = Object.assign({}, root.settings, { units: root.showGb ? "Percent" : "GB" })
+    if (root.bar && root.bar.shell) root.bar.shell.updateEntryInline(root.moduleName, root.settings)
   }
 
   // Even width and a height of the bar's parity, so centring leaves no half pixel.
@@ -143,8 +156,9 @@ BarWidget {
     FontMetrics { id: numberMetrics; font: ramText.font }
     // Digits set the baseline, so the numbers sit centred in the bar.
     TextMetrics { id: digitInk; font: ramText.font; text: "88" }
-    // Room for two digits, so 9% turning into 10% doesn't move the bar.
-    TextMetrics { id: slotInk; font: ramText.font; text: "󰍛 88%" }
+    // Room for two digits, so 9% turning into 10% (or 9.9G into 10.0G)
+    // doesn't move the bar.
+    TextMetrics { id: slotInk; font: ramText.font; text: root.showGb ? "󰍛 88.8G" : "󰍛 88%" }
 
     Row {
       id: numbersRow
@@ -155,12 +169,12 @@ BarWidget {
 
       BarNumber {
         id: ramText
-        text: "󰍛 " + root.memPercent + "%"
+        text: root.label("󰍛", root.memUsed, root.memPercent)
         color: root.levelColor(root.showSwap ? root.memPercent : root.worstPercent)
       }
       BarNumber {
         visible: root.showSwap
-        text: "󰓡 " + root.swapPercent + "%"
+        text: root.label("󰓡", root.swapUsed, root.swapPercent)
         color: root.levelColor(root.swapPercent)
       }
     }
@@ -168,13 +182,15 @@ BarWidget {
     MouseArea {
       id: numbersMouse
       anchors.fill: parent
+      acceptedButtons: Qt.LeftButton | Qt.RightButton
       hoverEnabled: true
       cursorShape: Qt.PointingHandCursor
       onEntered: if (root.bar) root.bar.showTooltip(numbers, root.tooltip)
       onExited: if (root.bar) root.bar.hideTooltip(numbers)
       onClicked: function(mouse) {
         if (root.bar) root.bar.hideTooltip(numbers)
-        root.openBtop(mouse.button)
+        if (mouse.button === Qt.RightButton) root.toggleUnits()
+        else root.openBtop(mouse.button)
       }
     }
   }

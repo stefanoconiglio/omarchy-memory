@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "io.github.stefanoconiglio.memory",
   "name": "Memory",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "Stefano Coniglio",
   "license": "MIT",
   "description": "RAM and swap in use, measured the way systemd-oomd measures them, turning orange and then red before oomd starts killing.",
@@ -14,7 +14,7 @@
   },
   "barWidget": {
     "displayName": "Memory",
-    "description": "RAM and swap in use; click for btop",
+    "description": "RAM and swap in use; click for btop, right-click for GB",
     "category": "System",
     "allowMultiple": false,
     "defaultSection": "right",
@@ -38,6 +38,17 @@
           "Off"
         ],
         "defaultValue": "On"
+      },
+      {
+        "key": "units",
+        "type": "enum",
+        "label": "Units",
+        "options": [
+          "Percent",
+          "GB"
+        ],
+        "defaultValue": "Percent",
+        "description": "Show the share in use or the GB in use; a right click on the widget switches it."
       }
     ]
   }

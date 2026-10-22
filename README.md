@@ -25,6 +25,15 @@ just enough to read at 3:1 against the bar. Hover for the amounts in GB;
 click to open btop.
 The numbers update every 3 seconds.
 
+Right-click to see the GB in use instead of the percentages
+(`󰍛 12.6G  󰓡 9.4G`), and right-click again to go back. The colours still
+follow the percentages, and the choice is kept across restarts (the `units`
+setting).
+
+![The widget showing the GB in use](docs/img/2026-10-22-gb-1.png)
+
+New on 22 Oct 2026 ([patch notes](docs/patch-notes.md#2026-10-22-right-click-for-the-gb-in-use)).
+
 ## Install
 
 ```bash
@@ -41,14 +50,16 @@ Requires Omarchy Quattro (the Quickshell-based `omarchy-shell`).
 
 ## Settings
 
-| Setting       | Default | Meaning                                                    |
-|---------------|---------|------------------------------------------------------------|
-| `warnPercent` | `85`    | RAM or swap share at which its number turns orange         |
-| `showSwap`    | `On`    | `Off` shows RAM only; swap still counts toward its colour  |
+| Setting       | Default   | Meaning                                                    |
+|---------------|-----------|------------------------------------------------------------|
+| `warnPercent` | `85`      | RAM or swap share at which its number turns orange         |
+| `showSwap`    | `On`      | `Off` shows RAM only; swap still counts toward its colour  |
+| `units`       | `Percent` | `GB` shows the GB in use; a right click switches it        |
 
 ```bash
 omarchy bar set io.github.stefanoconiglio.memory warnPercent 80 --json
 omarchy bar set io.github.stefanoconiglio.memory showSwap Off
+omarchy bar set io.github.stefanoconiglio.memory units GB
 ```
 
 On a vertical bar the widget shows only the icon; the colour and tooltip still
