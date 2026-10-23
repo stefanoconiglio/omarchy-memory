@@ -34,11 +34,30 @@ QtObject {
   // The shell takes a new theme's colours over IPC (omarchy-theme-set), after
   // the theme's files are in place; reading the file again when its colours
   // change keeps orange and red with the theme.
+  // omarchy-theme-set deletes the theme folder and then moves the new one in:
+  // a read in between finds no file and drops the watch. That miss is
+  // expected, so it is not printed; the file is read again shortly instead,
+  // which also catches a theme whose background and urgent colour are the
+  // old ones. A file still missing after 5 s is reported once.
+  property int failedReads: 0
   property FileView file: FileView {
     path: Color.currentThemePath + "/colors.toml"
     watchChanges: true
+    printErrors: false
     onFileChanged: reload()
-    onLoaded: root.paletteText = text()
+    onLoaded: { root.failedReads = 0; root.paletteText = text() }
+    onLoadFailed: (error) => {
+      root.failedReads++
+      if (root.failedReads <= 20)
+        root.retry.restart()
+      else if (root.failedReads === 21)
+        console.warn("Attention.qml: cannot read " + path + " (error " + error + ")")
+    }
+  }
+
+  property Timer retry: Timer {
+    interval: 250
+    onTriggered: root.file.reload()
   }
 
   property Connections themeWatch: Connections {
